@@ -1,5 +1,8 @@
 package com.mfholdings.mfholdings.Controller;
 
+import java.io.IOException;
+
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mfholdings.mfholdings.Service.MutualFundHoldingService;
@@ -13,7 +16,8 @@ public class MutualFundHoldingController {
         this.mutualFundHoldingService = mutualFundHoldingService;
     }
 
-    public void getMutualFundHoldings(){
+    @GetMapping("/holdings")
+    public void getMutualFundHoldings() throws IOException{
         mutualFundHoldingService.getMutualFundHoldings();
     }
 
