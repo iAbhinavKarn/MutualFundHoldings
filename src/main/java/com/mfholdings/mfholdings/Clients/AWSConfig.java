@@ -19,7 +19,7 @@ public class AWSConfig {
     }
 
     private AWSCredentialsProvider getAWAwsCredentialsProvider(){
-        AWSCredentials awsCredentials = new BasicAWSCredentials("access-key", "secret-key");
+        AWSCredentials awsCredentials = new BasicAWSCredentials(System.getenv("access-key"), System.getenv("secret-key"));
         return new AWSStaticCredentialsProvider(awsCredentials);
     }
 

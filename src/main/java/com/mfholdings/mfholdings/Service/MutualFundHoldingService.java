@@ -3,7 +3,9 @@ package com.mfholdings.mfholdings.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -13,10 +15,10 @@ import org.jsoup.select.Elements;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Service;
 
+import com.mfholdings.mfholdings.Clients.EmailService;
 import com.mfholdings.mfholdings.Entity.MutualFund;
-import com.mfholdings.mfholdings.Entity.Stocks;
 import com.mfholdings.mfholdings.Repository.MutualFundRepository;
-import com.mfholdings.mfholdings.Repository.StocksRepository;
+import com.mfholdings.mfholdings.Response.MutualFundsHoldingResponse;
 import com.mfholdings.mfholdings.Wrapper.AsyncWrapper;
 
 @Service
@@ -26,35 +28,52 @@ public class MutualFundHoldingService {
 
     private final AsyncWrapper asyncWrapper;
 
-    private final StocksRepository stocksRepository;
+    private final EmailService emailService;
 
-    public MutualFundHoldingService(MutualFundRepository mutualFundRepository, AsyncWrapper asyncWrapper, StocksRepository stocksRepository){
+    private final SaveStocksAsyncService saveStocksAsyncService;
+
+    public MutualFundHoldingService(MutualFundRepository mutualFundRepository, AsyncWrapper asyncWrapper, EmailService emailService, SaveStocksAsyncService saveStocksAsyncService){
         this.mutualFundRepository = mutualFundRepository;
-        this.stocksRepository = stocksRepository;
         this.asyncWrapper = asyncWrapper;
+        this.emailService = emailService;
+        this.saveStocksAsyncService = saveStocksAsyncService;
     }
 
-    public void getMutualFundHoldings() throws IOException{
+    public MutualFundsHoldingResponse getMutualFundHoldings() throws IOException{
         List<MutualFund> allMutualFunds = mutualFundRepository.findAll();
-        Function<MutualFund, List<String>> function = r -> {
-            List<String> returnList = new ArrayList<>();
+        Function<MutualFund, Map<String,List<String>>> function = r -> {
+            Map<String, List<String>> returnMap = new HashMap<>();
             try {
-                returnList = getHoldings(r);
+                returnMap = getHoldings(r);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return returnList;
+            return returnMap;
         };
-        List<CompletableFuture<List<String>>> responses = Collections.synchronizedList(new ArrayList<>());
+        List<CompletableFuture<Map<String, List<String>>>> responses = Collections.synchronizedList(new ArrayList<>());
         for(MutualFund mutualFund : allMutualFunds){
             responses.add(asyncWrapper.execute(function, mutualFund));
         }
+
+        MutualFundsHoldingResponse mutualFundsHoldingResponse = new MutualFundsHoldingResponse();
+        List<Map<String, List<String>>> mutualFundHoldingList = new ArrayList<>();
+
+        for(CompletableFuture<Map<String, List<String>>> response : responses){
+            mutualFundHoldingList.add(response.join());
+        }
+
+        mutualFundsHoldingResponse.setMutualFundHoldings(mutualFundHoldingList);
+
+        saveStocksAsyncService.saveStocks(mutualFundHoldingList);
+
+        return mutualFundsHoldingResponse;
+
+        // emailService.sendEmail("karnabhinav13796@gmail.com", "karnabhinav13796@gmail.com", "Testing Email Send");
     }
 
 
 
-    public List<String> getHoldings(MutualFund mutualFund) throws IOException{
-        System.out.println("INN here");
+    public Map<String, List<String>> getHoldings(MutualFund mutualFund) throws IOException{
         Document doc = Jsoup.connect(mutualFund.getUrlString()).get();
         Elements rowClassData = doc.getElementsByClass("row pt-3");
         List<String> returnList = new ArrayList<>();
@@ -66,14 +85,12 @@ public class MutualFundHoldingService {
                     Element nameCell = row.select("td").first();
                     if (nameCell != null) {
                         returnList.add(nameCell.text());
-                        Stocks stocks = new Stocks();
-                        stocks.setName(nameCell.text());
-                        stocksRepository.save(stocks);
                     }
                 }
             }
         }
-        return returnList;
+        Map<String, List<String>> returnMap = new HashMap<>();
+        returnMap.put(mutualFund.getName(), returnList);
+        return returnMap;
     }
-
 }
