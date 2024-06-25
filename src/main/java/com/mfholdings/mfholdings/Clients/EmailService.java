@@ -13,17 +13,21 @@ public class EmailService {
 
     public final AWSConfig awsConfig;
 
+    private final String fromEmail = "Enter Email Here";
+
+    private final String toEmail = "Enter Email Here";
+
     EmailService(AWSConfig awsConfig){
         this.awsConfig = awsConfig;
     }
 
-    public void sendEmail(String from, String to, String message){
+    public void sendEmail(String message){
         SendEmailRequest sendEmailRequest = new SendEmailRequest().
-        withDestination(new Destination().withToAddresses(to))
+        withDestination(new Destination().withToAddresses(toEmail))
         .withMessage(new Message().withBody(new Body()
         .withHtml(new Content().withCharset("UTF-8")
-        .withData(message))).withSubject(new Content().withCharset("UTF-8").withData(message)))
-        .withSource(from);
+        .withData(message))).withSubject(new Content().withCharset("UTF-8").withData("Stocks Changed")))
+        .withSource(fromEmail);
         awsConfig.getAmazonSimpleEmailServiceClient().sendEmail(sendEmailRequest);
     }
 }

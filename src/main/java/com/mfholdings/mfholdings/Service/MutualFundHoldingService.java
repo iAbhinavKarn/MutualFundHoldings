@@ -15,7 +15,6 @@ import org.jsoup.select.Elements;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Service;
 
-import com.mfholdings.mfholdings.Clients.EmailService;
 import com.mfholdings.mfholdings.Entity.MutualFund;
 import com.mfholdings.mfholdings.Repository.MutualFundRepository;
 import com.mfholdings.mfholdings.Response.MutualFundsHoldingResponse;
@@ -28,14 +27,11 @@ public class MutualFundHoldingService {
 
     private final AsyncWrapper asyncWrapper;
 
-    private final EmailService emailService;
-
     private final SaveStocksAsyncService saveStocksAsyncService;
 
-    public MutualFundHoldingService(MutualFundRepository mutualFundRepository, AsyncWrapper asyncWrapper, EmailService emailService, SaveStocksAsyncService saveStocksAsyncService){
+    public MutualFundHoldingService(MutualFundRepository mutualFundRepository, AsyncWrapper asyncWrapper, SaveStocksAsyncService saveStocksAsyncService){
         this.mutualFundRepository = mutualFundRepository;
         this.asyncWrapper = asyncWrapper;
-        this.emailService = emailService;
         this.saveStocksAsyncService = saveStocksAsyncService;
     }
 
@@ -67,8 +63,6 @@ public class MutualFundHoldingService {
         saveStocksAsyncService.saveStocks(mutualFundHoldingList);
 
         return mutualFundsHoldingResponse;
-
-        // emailService.sendEmail("karnabhinav13796@gmail.com", "karnabhinav13796@gmail.com", "Testing Email Send");
     }
 
 
